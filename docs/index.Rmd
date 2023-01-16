@@ -1,0 +1,1358 @@
+---
+title: "R : Survival Analysis and Descriptive Modelling for a Three-Group Right-Censored
+  Data with Time-Independent Variables Using Cox Proportional Hazards Model"
+author: "John Pauline Pineda"
+date: "May 6, 2022"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: readable
+    highlight: tango
+    css: doc.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
+```
+# **1. Table of Contents**
+|
+| This document presents a non-exhaustive list of survival analysis and descriptive modelling methods for a three-group right-censored data with time-independent variables using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.    
+|
+##  1.1 Sample Data
+|
+| The <mark style="background-color: #EEEEEE;color: #FF0000">**Cancer**</mark> dataset from the book  <mark style="background-color: #CCECFF">**Supervised Machine Learning**</mark> was used for this illustrated example.
+|
+| Preliminary dataset assessment:
+|
+| **[A]** 228 Rows (observations composed of advanced lung cancer patients)
+|
+| **[B]** 9 Columns (variables)
+|      **[B.1]** 1/9 Factor variable = <span style="color: #FF0000">ph.ecog</span> (factor) referring to the ECOG performance score (0=best, 3=worst) which describes the level of functioning of patients  in terms of their ability to care for themselves, daily activity, and physical ability.
+|           **[B.1.1]** <span style="color: #FF0000">Asymptomatic</span> = ECOG performance score 0 (asymptomatic)
+|           **[B.1.2]** <span style="color: #FF0000">Ambulatory</span> = ECOG performance score 1 (symptomatic but completely ambulatory)
+|           **[B.1.3]** <span style="color: #FF0000">Bedridden</span> = ECOG performance score 2 (symptomatic but <50% in bed) or ECOG performance score 3 (symptomatic but >50% in bed)
+|      **[B.2]** 1/9 Censoring variable = <span style="color: #FF0000">status</span> (factor)
+|           **[B.2.1]** <span style="color: #FF0000">1</span> = event, patient died before the end of the study
+|           **[B.2.2]** <span style="color: #FF0000">0</span> = censored or non-event, patient remains alive until the end of the study, lost to follow-up, experiences a different event that makes further follow-up impossible or withdraws before the end of the study
+|      **[B.3]** 1/9 Response variables = <span style="color: #FF0000">time</span> (numeric)
+|           **[B.3.1]** <span style="color: #FF0000">time</span> = time in days a patient stays alive up to the point of the patient’s death or being censored
+|      **[B.4]** 1/9 Covariate variable = <span style="color: #FF0000">age</span> (numeric)
+|           **[B.4.1]** <span style="color: #FF0000">age</span> = patient's age in years during the conduct of the study
+|      **[B.5]** 1/9 Covariate variable = <span style="color: #FF0000">sex</span> (factor)
+|           **[B.5.1]** <span style="color: #FF0000">sex</span> = patient's sex at birth
+|      **[B.6]** 1/9 Covariate variable = <span style="color: #FF0000">ph.karno</span> (numeric)
+|           **[B.6.1]** <span style="color: #FF0000">ph.karno</span> = Karnofsky performance score (bad=0,good=100) rated by physician
+|      **[B.7]** 1/9 Covariate variable = <span style="color: #FF0000">pat.karno:</span> (numeric)
+|           **[B.7.1]** <span style="color: #FF0000">pat.karno</span> = Karnofsky performance score (bad=0,good=100) rated by physician
+|      **[B.8]** 1/9 Covariate variable = <span style="color: #FF0000">meal.cal</span> (numeric)
+|           **[B.8.1]** <span style="color: #FF0000">meal.cal</span> = calories consumed at meals
+|      **[B.9]** 1/9 Covariate variable = <span style="color: #FF0000">wt.loss</span> (numeric)
+|           **[B.9.1]** <span style="color: #FF0000">wt.loss</span> = weight loss in last six months
+```{r section_1.1, warning=FALSE, message=FALSE}
+##################################
+# Loading R libraries
+##################################
+library(moments)
+library(car)
+library(multcomp)
+library(effects)
+library(psych)
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(rstatix)
+library(ggfortify)
+library(trend)
+library(survival)
+library(rms)
+library(survminer)
+library(Hmisc)
+library(finalfit)
+library(knitr)
+library(gtsummary)
+
+##################################
+# Loading the complete dataset
+##################################
+data(cancer)
+
+##################################
+# Reading and creating the complete dataset
+##################################
+DBP.Complete <- cancer
+
+##################################
+# Performing a general exploration of the dataset
+##################################
+dim(DBP.Complete)
+str(DBP.Complete)
+summary(DBP.Complete)
+
+##################################
+# Creating standard labels for certain variables
+##################################
+DBP.Complete$ph.ecog <- factor(DBP.Complete$ph.ecog, 
+                     levels = c(3, 2, 1, 0), 
+                     labels = c("Bedridden", "Bedridden", "Ambulatory","Asymptomatic"))
+
+DBP.Complete$sex <- factor(DBP.Complete$sex, 
+                     levels = c(1, 2), 
+                     labels = c("Male", "Female"))
+
+DBP.Complete$statuslevel <- factor(DBP.Complete$status, 
+                     levels = c(1, 2), 
+                     labels = c(0, 1))
+
+DBP.Complete$status <- ifelse(DBP.Complete$status==2,1,0)
+
+##################################
+# Creating an analysis dataset without the subject information column
+##################################
+DBP.Analysis <- DBP.Complete[,-1]
+
+##################################
+# Creating a response-covariate dataset without the treatment column
+##################################
+DBP.Response.Covariate <- DBP.Analysis[,-5]
+
+##################################
+# Formulating a data type assessment summary
+##################################
+PDA <- DBP.Analysis
+(PDA.Summary <- data.frame(
+  Column.Index=c(1:length(names(PDA))),
+  Column.Name= names(PDA), 
+  Column.Type=sapply(PDA, function(x) class(x)), 
+  row.names=NULL)
+)
+
+```
+
+##  1.2 Data Quality Assessment
+|
+| Data quality assessment:
+|
+| **[A]** Missing observations noted for 5 variables with NA.Count>0 and Fill.Rate<1.0.
+|      **[A.1]** <span style="color: #FF0000">ph.ecog</span> variable (factor)
+|      **[A.2]** <span style="color: #FF0000">ph.karno</span> variable (numeric)
+|      **[A.3]** <span style="color: #FF0000">pat.karno</span> variable (numeric)
+|      **[A.4]** <span style="color: #FF0000">meal.cal</span> variable (numeric)
+|      **[A.5]** <span style="color: #FF0000">wt.loss</span> variable (numeric)
+|
+| **[B]** No low variance (Unique.Count.Ratio<0.01 or First.Second.Mode.Ratio>5) noted for any response variable.
+|
+| **[C]** No high skewness (Skewness>3 or Skewness<(-3)) noted for any response variable.
+|
+| **[D]** Row filtering and column filtering were both applied to address quality issues in the data.
+|      **[D.1]** 1 patient with missing information for <span style="color: #FF0000">ph.ecog</span> variable removed.
+|      **[D.2]** 4 variable columns <span style="color: #FF0000">ph.karno</span>, <span style="color: #FF0000">pat.karno</span>, <span style="color: #FF0000">meal.cal</span> and <span style="color: #FF0000">wt.loss</span> with low fill rates removed.
+|
+| Updated dataset assessment:
+|
+| **[A]** 227 Rows (observations composed of advanced lung cancer patients)
+|
+| **[B]** 5 Columns (variables)
+|      **[B.1]** 1/5 Factor variable = <span style="color: #FF0000">ph.ecog</span> (factor) referring to the ECOG performance score (0=best, 3=worst) which describes the level of functioning of patients  in terms of their ability to care for themselves, daily activity, and physical ability.
+|           **[B.1.1]** <span style="color: #FF0000">Asymptomatic</span> = ECOG performance score 0 (asymptomatic)
+|           **[B.1.2]** <span style="color: #FF0000">Ambulatory</span> = ECOG performance score 1 (symptomatic but completely ambulatory)
+|           **[B.1.3]** <span style="color: #FF0000">Bedridden</span> = ECOG performance score 2 (symptomatic but <50% in bed) or ECOG performance score 3 (symptomatic but >50% in bed)
+|      **[B.2]** 1/5 Censoring variable = <span style="color: #FF0000">status</span> (factor)
+|           **[B.2.1]** <span style="color: #FF0000">1</span> = event, patient died before the end of the study
+|           **[B.2.2]** <span style="color: #FF0000">0</span> = censored or non-event, patient remains alive until the end of the study, lost to follow-up, experiences a different event that makes further follow-up impossible or withdraws before the end of the study
+|      **[B.3]** 1/5 Response variables = <span style="color: #FF0000">time</span> (numeric)
+|           **[B.3.1]** <span style="color: #FF0000">time</span> = time in days a patient stays alive up to the point of the patient’s death or being censored
+|      **[B.4]** 1/5 Covariate variable = <span style="color: #FF0000">age</span> (numeric)
+|           **[B.4.1]** <span style="color: #FF0000">age</span> = patient's age in years during the conduct of the study
+|      **[B.5]** 1/5 Covariate variable = <span style="color: #FF0000">sex</span> (factor)
+|           **[B.5.1]** <span style="color: #FF0000">sex</span> = patient's sex at birth
+|
+```{r section_1.2, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DQA <- DBP.Analysis
+
+##################################
+# Listing all predictors
+##################################
+DQA.Predictors <- DQA[,!names(DQA) %in% c("time","status")]
+
+##################################
+# Formulating an overall data quality assessment summary
+##################################
+(DQA.Summary <- data.frame(
+  Column.Index=c(1:length(names(DQA))),
+  Column.Name= names(DQA), 
+  Column.Type=sapply(DQA, function(x) class(x)), 
+  Row.Count=sapply(DQA, function(x) nrow(DQA)),
+  NA.Count=sapply(DQA,function(x)sum(is.na(x))),
+  Fill.Rate=sapply(DQA,function(x)format(round((sum(!is.na(x))/nrow(DQA)),3),nsmall=3)),
+  row.names=NULL)
+)
+
+##################################
+# Listing all numeric predictors
+##################################
+DQA.Predictors.Numeric <- as.data.frame(DQA.Predictors[,sapply(DQA.Predictors, is.numeric)])
+
+if (length(names(DQA.Predictors.Numeric))>0) {
+    print(paste0("There are ",
+               (length(names(DQA.Predictors.Numeric))),
+               " numeric predictor variable(s)."))
+} else {
+  print("There are no numeric predictor variables.")
+}
+
+##################################
+# Listing all factor predictors
+##################################
+DQA.Predictors.Factor <- as.data.frame(DQA.Predictors[,sapply(DQA.Predictors, is.factor)])
+
+if (length(names(DQA.Predictors.Factor))>0) {
+    print(paste0("There are ",
+               (length(names(DQA.Predictors.Factor))),
+               " factor predictor variable(s)."))
+} else {
+  print("There are no factor predictor variables.")
+}
+
+##################################
+# Checking for missing observations
+##################################
+if ((nrow(DQA.Summary[DQA.Summary$NA.Count>0,]))>0){
+  print(paste0("Missing observations noted for ",
+               (nrow(DQA.Summary[DQA.Summary$NA.Count>0,])),
+               " variable(s) with NA.Count>0 and Fill.Rate<1.0."))
+  DQA.Summary[DQA.Summary$NA.Count>0,]
+} else {
+  print("No missing observations noted.")
+}
+
+##################################
+# Formulating a data quality assessment summary for numeric predictors
+##################################
+
+if (length(names(DQA.Predictors.Numeric))>0) {
+  
+  ##################################
+  # Formulating a function to determine the first mode
+  ##################################
+  FirstModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    ux[tab == max(tab)]
+  }
+
+  ##################################
+  # Formulating a function to determine the second mode
+  ##################################
+  SecondModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    fm = ux[tab == max(tab)]
+    sm = na.omit(x)[!(na.omit(x) %in% fm)]
+    usm <- unique(sm)
+    tabsm <- tabulate(match(sm, usm))
+    usm[tabsm == max(tabsm)]
+  }
+  
+  (DQA.Predictors.Numeric.Summary <- data.frame(
+  Column.Name= names(DQA.Predictors.Numeric), 
+  Column.Type=sapply(DQA.Predictors.Numeric, function(x) class(x)), 
+  Unique.Count=sapply(DQA.Predictors.Numeric, function(x) length(unique(x))),
+  Unique.Count.Ratio=sapply(DQA.Predictors.Numeric, function(x) format(round((length(unique(x))/nrow(DQA.Predictors.Numeric)),3), nsmall=3)),
+  First.Mode.Value=sapply(DQA.Predictors.Numeric, function(x) format(round((FirstModes(x)[1]),3),nsmall=3)),
+  Second.Mode.Value=sapply(DQA.Predictors.Numeric, function(x) format(round((SecondModes(x)[1]),3),nsmall=3)),
+  First.Mode.Count=sapply(DQA.Predictors.Numeric, function(x) sum(na.omit(x) == FirstModes(x)[1])),
+  Second.Mode.Count=sapply(DQA.Predictors.Numeric, function(x) sum(na.omit(x) == SecondModes(x)[1])),
+  First.Second.Mode.Ratio=sapply(DQA.Predictors.Numeric, function(x) format(round((sum(na.omit(x) == FirstModes(x)[1])/sum(na.omit(x) == SecondModes(x)[1])),3), nsmall=3)),
+  Minimum=sapply(DQA.Predictors.Numeric, function(x) format(round(min(x,na.rm = TRUE),3), nsmall=3)),
+  Mean=sapply(DQA.Predictors.Numeric, function(x) format(round(mean(x,na.rm = TRUE),3), nsmall=3)),
+  Median=sapply(DQA.Predictors.Numeric, function(x) format(round(median(x,na.rm = TRUE),3), nsmall=3)),
+  Maximum=sapply(DQA.Predictors.Numeric, function(x) format(round(max(x,na.rm = TRUE),3), nsmall=3)),
+  Skewness=sapply(DQA.Predictors.Numeric, function(x) format(round(skewness(x,na.rm = TRUE),3), nsmall=3)),
+  Kurtosis=sapply(DQA.Predictors.Numeric, function(x) format(round(kurtosis(x,na.rm = TRUE),3), nsmall=3)),
+  Percentile25th=sapply(DQA.Predictors.Numeric, function(x) format(round(quantile(x,probs=0.25,na.rm = TRUE),3), nsmall=3)),
+  Percentile75th=sapply(DQA.Predictors.Numeric, function(x) format(round(quantile(x,probs=0.75,na.rm = TRUE),3), nsmall=3)),
+  row.names=NULL)
+  )  
+  
+}
+
+##################################
+# Identifying potential data quality issues for response variables (numeric) 
+##################################
+
+##################################
+# Checking for zero or near-zero variance predictors
+##################################
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No numeric predictors noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,])>0){
+  print(paste0("Low variance observed for ",
+               (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,])),
+               " numeric variable(s) with First.Second.Mode.Ratio>5."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,]
+} else {
+  print("No low variance numeric predictors due to high first-second mode ratio noted.")
+}
+
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No numeric predictors noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,])>0){
+  print(paste0("Low variance observed for ",
+               (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,])),
+               " numeric variable(s) with Unique.Count.Ratio<0.01."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,]
+} else {
+  print("No low variance numeric predictors due to low unique count ratio noted.")
+}
+
+##################################
+# Checking for skewed response variables
+##################################
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No response variables noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                               as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),])>0){
+  print(paste0("High skewness observed for ",
+  (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                               as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),])),
+  " response variable(s) with Skewness>3 or Skewness<(-3)."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                 as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),]
+} else {
+  print("No skewed response variables noted.")
+}
+
+##################################
+# Applying data filtering 
+##################################
+DBP.ColumnFiltered <- DBP.Analysis[,!names(DBP.Analysis) %in% c("ph.karno","pat.karno","meal.cal","wt.loss")]
+DBP.RowFiltered <- DBP.ColumnFiltered[complete.cases(DBP.ColumnFiltered),]
+DBP.Analysis.Filtered <- DBP.RowFiltered
+
+##################################
+# Loading filtered dataset
+##################################
+DQA.Filtered <- DBP.Analysis.Filtered
+
+##################################
+# Formulating an overall data quality assessment summary
+##################################
+(DQA.Filtered.Summary <- data.frame(
+  Column.Index=c(1:length(names(DQA.Filtered))),
+  Column.Name= names(DQA.Filtered), 
+  Column.Type=sapply(DQA.Filtered, function(x) class(x)), 
+  Row.Count=sapply(DQA.Filtered, function(x) nrow(DQA.Filtered)),
+  NA.Count=sapply(DQA.Filtered,function(x)sum(is.na(x))),
+  Fill.Rate=sapply(DQA.Filtered,function(x)format(round((sum(!is.na(x))/nrow(DQA.Filtered)),3),nsmall=3)),
+  row.names=NULL)
+)
+```
+
+##  1.3 Research Question
+|
+| Using the <mark style="background-color: #EEEEEE;color: #FF0000">**cancer**</mark> dataset, survival analysis and modelling will be conducted to investigate the following :
+|
+| **[A]** Research Question : What is the probability that an advanced lung cancer patient under the <span style="color: #FF0000">Asymptomatic</span>, <span style="color: #FF0000">Ambulatory</span> and <span style="color: #FF0000">Bedridden</span> groups will survive (stay alive) after a specified number of days?   
+|      **[A.1]** Factor variable = <span style="color: #FF0000">ph.ecog</span>
+|           **[A.1.1]** <span style="color: #FF0000">Asymptomatic</span> = ECOG performance score 0 (asymptomatic)
+|           **[A.1.2]** <span style="color: #FF0000">Ambulatory</span> = ECOG performance score 1 (symptomatic but completely ambulatory)
+|           **[A.1.3]** <span style="color: #FF0000">Bedridden</span> = ECOG performance score 2 (symptomatic but <50% in bed) or ECOG performance score 3 (symptomatic but >50% in bed)
+|      **[A.2]** Response variable = <span style="color: #FF0000">time</span> (numeric)
+|      **[A.3]** Censoring variable = <span style="color: #FF0000">status</span> (factor)
+|           **[A.3.1]** <span style="color: #FF0000">1</span> = event, patient died before the end of the study
+|           **[A.3.2]** <span style="color: #FF0000">0</span> = censored or non-event, patient remains alive until until the end of the study, lost to follow-up, experiences a different event that makes further follow-up impossible or withdraws before the end of the study
+|
+| **[B]** Research Question : Are there differences in survival between advanced lung cancer patients under the  <span style="color: #FF0000">Asymptomatic</span>, <span style="color: #FF0000">Ambulatory</span> and <span style="color: #FF0000">Bedridden</span> groups?  
+|      **[B.1]** Factor variable = <span style="color: #FF0000">ph.ecog</span>
+|           **[B.1.1]** <span style="color: #FF0000">Asymptomatic</span> = ECOG performance score 0 (asymptomatic)
+|           **[B.1.2]** <span style="color: #FF0000">Ambulatory</span> = ECOG performance score 1 (symptomatic but completely ambulatory)
+|           **[B.1.3]** <span style="color: #FF0000">Bedridden</span> = ECOG performance score 2 (symptomatic but <50% in bed) or ECOG performance score 3 (symptomatic but >50% in bed)
+|      **[B.2]** Response variable = <span style="color: #FF0000">time</span> (numeric)
+|      **[B.3]** Censoring variable = <span style="color: #FF0000">status</span> (factor)
+|           **[B.3.1]** <span style="color: #FF0000">1</span> = event, patient died before the end of the study
+|           **[B.3.2]** <span style="color: #FF0000">0</span> = censored or non-event, patient remains alive until the end of the study, lost to follow-up, experiences a different event that makes further follow-up impossible or withdraws before the end of the study
+|
+| **[C]** Research Question : What is the impact of the clinical characteristicS <span style="color: #FF0000">age</span> and <span style="color: #FF0000">sex</span> on the survival of advanced lung cancer patients under the  <span style="color: #FF0000">Asymptomatic</span>, <span style="color: #FF0000">Ambulatory</span> and <span style="color: #FF0000">Bedridden</span> groups?
+|      **[C.1]** Factor variable = <span style="color: #FF0000">ph.ecog</span> (factor) referring to the ECOG performance score (0=best, 3=worst) which describes the level of functioning of patients  in terms of their ability to care for themselves, daily activity, and physical ability.
+|           **[C.1.1]** <span style="color: #FF0000">Asymptomatic</span> = ECOG performance score 0 (asymptomatic)
+|           **[C.1.2]** <span style="color: #FF0000">Ambulatory</span> = ECOG performance score 1 (symptomatic but completely ambulatory)
+|           **[C.1.3]** <span style="color: #FF0000">Bedridden</span> = ECOG performance score 2 (symptomatic but <50% in bed) or ECOG performance score 3 (symptomatic but >50% in bed)
+|      **[C.2]** 1/5 Censoring variable = <span style="color: #FF0000">status</span> (factor)
+|           **[C.2.1]** <span style="color: #FF0000">1</span> = event, patient died before the end of the study
+|           **[C.2.2]** <span style="color: #FF0000">0</span> = censored or non-event, patient remains alive until the end of the study, lost to follow-up, experiences a different event that makes further follow-up impossible or withdraws before the end of the study
+|      **[C.3]** Response variables = <span style="color: #FF0000">time</span> (numeric)
+|           **[C.3.1]** <span style="color: #FF0000">time</span> = time in days a patient stays alive up to the point of the patient’s death or being censored
+|      **[C.4]** Covariate variable = <span style="color: #FF0000">age</span> (numeric)
+|           **[C.4.1]** <span style="color: #FF0000">age</span> = patient's age in years during the conduct of the study
+|      **[C.5]** Covariate variable = <span style="color: #FF0000">sex</span> (factor)
+|           **[C.5.1]** <span style="color: #FF0000">sex</span> = patient's sex at birth
+|
+##  1.4 Data Exploration
+|
+| Exploratory and comparative analyses of the response variable <span style="color: #FF0000">time</span> by factor variable <span style="color: #FF0000">ph.ecog</span> showed that :
+|
+| **[A]** Differences in the proportion of censored and uncensored data (p=0.002, Pearson's Chi-squared Test) observed between <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (censored=41%, uncensored=59%), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (censored=27%, uncensored=73%) and <span style="color: #FF0000">ph.ecog=Bedridden</span> (censored=12%, uncensored=88%). 
+|
+| **[B]** With both censored and uncensored data considered, differences in median survival time <span style="color: #FF0000">time</span> (p=0.001, Wilcoxon Rank Sum Test) was observed for <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (303), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (243) and compared to <span style="color: #FF0000">ph.ecog=Bedridden</span> (180). Differences in the age of patients <span style="color: #FF0000">age</span> (p=0.002, Wilcoxon Rank Sum Test) was also noted for <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (61), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (61) and compared to <span style="color: #FF0000">ph.ecog=Bedridden</span> (66). 
+|
+| **[C]** With only the uncensored considered, decreasing mean survival time <span style="color: #FF0000">time</span> observed <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (331), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (296) and <span style="color: #FF0000">ph.ecog=Bedridden</span> (223). Increasing mean hazard rate was also noted for <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (0.17), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (0.23) and <span style="color: #FF0000">ph.ecog=Bedridden</span> (0.38).
+|
+| Kaplan-Meier survival curve analysis of  the response variable <span style="color: #FF0000">time</span> by factor variable <span style="color: #FF0000">ph.ecog</span> (with censoring variable <span style="color: #FF0000">status</span> considered) showed that :
+|
+| **[A]** Differences in the Kaplan-Meier survival curves (p<0.0001, Log Rank Test) were noted between <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (median survival time=394), <span style="color: #FF0000">ph.ecog=Ambulatory</span> (median survival time=306) and <span style="color: #FF0000">ph.ecog=Bedridden</span> (median survival time=103). Post-hoc pairwise log rank test showed that differences in the Kaplan-Meier survival curves were observed between <span style="color: #FF0000">ph.ecog=Ambulatory</span> (median survival time=306) and <span style="color: #FF0000">ph.ecog=Bedridden</span> (median survival time=103) (p<0.0001, Log Rank Test) and <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (median survival time=394), and <span style="color: #FF0000">ph.ecog=Bedridden</span> (median survival time=103) (p=0.0039, Log Rank Test) only. Difference in the Kaplan-Meier survival curves between <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (median survival time=394) and <span style="color: #FF0000">ph.ecog=Ambulatory</span> (median survival time=306) was not statistically significant (p=0.0630, Log Rank Test). 
+|
+| **[B]** Decreasing survival times were consistently observed for advanced lung cancer patients under <span style="color: #FF0000">ph.ecog=Asymptomatic</span>, <span style="color: #FF0000">ph.ecog=Ambulatory</span> and <span style="color: #FF0000">ph.ecog=Bedridden</span> at various sampled durations including <span style="color: #FF0000">time=183 days (6 months)</span> (Asymptomatic=84%, Ambulatory=72%, Bedridden=50%), <span style="color: #FF0000">time=365 days (12 months)</span> (Asymptomatic=54%, Ambulatory=43%, Bedridden=21%), <span style="color: #FF0000">time=548 days (18 months)</span> (Asymptomatic=37%, Ambulatory=26%, Bedridden=11%), <span style="color: #FF0000">time=730 days (24 months)</span> (Asymptomatic=19%, Ambulatory=11%, Bedridden=4%), and <span style="color: #FF0000">time=913 days (32 months)</span> (Asymptomatic=8%, Ambulatory=6%, Bedridden=0%), except for <span style="color: #FF0000">time=1022 days (last recorded follow-up time)</span> where <span style="color: #FF0000">ph.ecog=Ambulatory</span> showed 6% survival while 0% survival was noted for both <span style="color: #FF0000">ph.ecog=Asymptomatic</span> and <span style="color: #FF0000">ph.ecog=Bedridden</span> groups.
+|
+### 1.4.1 Descriptive Statistics
+```{r section_1.4.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Reusing the dataset
+##################################
+head(DBP.Analysis.Filtered)
+
+##################################
+# Formulating a preliminary summary
+# of descriptive statistics
+##################################
+
+DBP.Analysis.Filtered %>%
+  select(time,statuslevel,ph.ecog,age,sex) %>%
+  tbl_summary(
+    by = ph.ecog,
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c("{N_nonmiss}",
+                                     "{mean} ({sd})",
+                                     "{median} ({p25}, {p75})",
+                                     "{min}, {max}"),
+    missing = "no") %>%
+  add_overall() %>%
+  add_p()
+
+##################################
+# Computing for the mean uncensored survival time
+# and mean hazard rate between asymptomatic, ambulatory and bedridden groups
+##################################
+DBP.Analysis.Filtered.DescriptiveStatistics <- DBP.Analysis.Filtered %>%
+  group_by(ph.ecog) %>%
+  summarise(
+    Mean.Uncensored.Survival.Time = mean(time[status==1]),
+    Total.Uncensored.Survival.Time = sum(status==1),
+    Total.Survival.Time = sum(time),
+    Mean.Hazard.Rate = (Total.Uncensored.Survival.Time/Total.Survival.Time)*100)
+
+kable(DBP.Analysis.Filtered.DescriptiveStatistics)
+
+```
+
+### 1.4.2 Kaplan-Meier Survival Curve
+```{r section_1.4.2, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Reusing the dataset
+##################################
+head(DBP.Analysis.Filtered)
+
+##################################
+# Computing the Kaplan-Meier survival estimates
+# using the Baseline data
+##################################
+DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates <- survfit(Surv(time, status) ~ 1, data = DBP.Analysis.Filtered)
+print(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates)
+
+tbl_survfit(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates,
+            times = c(183,365,548,730,913,1022),
+            label_header = "**Day {time}**"
+)
+
+##################################
+# Formulating a summary of the Kaplan-Meier survival estimates
+# using the Baseline data
+##################################
+summary(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates)
+(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates.Summary <- summary(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates)$table)
+
+##################################
+# Listing the details of the Kaplan-Meier survival estimates
+# using the Baseline data
+##################################
+(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates.Details <- surv_summary(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# using the Baseline data
+##################################
+SurvivalTimeInWeek.KaplanMeier.Baseline <- ggsurvplot(DBP.Analysis.Filtered.Baseline.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curve (Baseline)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.Baseline,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Computing the Kaplan-Meier survival estimates
+# using the Factor Variable
+##################################
+DBP.Analysis.Filtered.KaplanMeierEstimates <- survfit(Surv(time, status) ~ ph.ecog, data = DBP.Analysis.Filtered)
+print(DBP.Analysis.Filtered.KaplanMeierEstimates)
+
+tbl_survfit(DBP.Analysis.Filtered.KaplanMeierEstimates,
+            times = c(183,365,548,730,913,1022),
+            label_header = "**Day {time}**"
+)
+
+##################################
+# Formulating a summary of the Kaplan-Meier survival estimates
+# using the Factor Variable
+##################################
+summary(DBP.Analysis.Filtered.KaplanMeierEstimates)
+(DBP.Analysis.Filtered.KaplanMeierEstimates.Summary <- summary(DBP.Analysis.Filtered.KaplanMeierEstimates)$table)
+
+##################################
+# Listing the details of the Kaplan-Meier survival estimates
+# using the Factor Variable
+##################################
+(DBP.Analysis.Filtered.KaplanMeierEstimates.Details <- surv_summary(DBP.Analysis.Filtered.KaplanMeierEstimates))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# using the Factor Variable
+##################################
+SurvivalTimeInWeek.KaplanMeier.ByGroup <- ggsurvplot(DBP.Analysis.Filtered.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curve (ECOG Score)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
+                                                     palette = c("#00CC66","#3259A0","#FF5050"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+```
+
+### 1.4.3 Log Rank Test
+```{r section_1.4.3, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Conducting the Log Rank Test
+# between the Kaplan-Meier survival estimates
+# using the Factor Variable
+##################################
+(DBP.Analysis.Filtered.LogRankTest <- survdiff(Surv(time, status) ~ ph.ecog, data = DBP.Analysis.Filtered))
+
+##################################
+# Conducting the Post-Hoc Test
+# between the Kaplan-Meier survival estimates
+# using the Factor Variable
+#################################
+(DBP.Analysis.Filtered.LogRankTest.PosthocTest <- survminer::pairwise_survdiff(Surv(time, status) ~ ph.ecog, data = DBP.Analysis.Filtered))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# using the Factor Variable
+##################################
+SurvivalTimeInWeek.KaplanMeier.ByGroup <- ggsurvplot(DBP.Analysis.Filtered.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curve (ECOG Score)",
+                                                     pval = TRUE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
+                                                     palette = c("#00CC66","#3259A0","#FF5050"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+```
+
+##  1.5 Model Development
+|
+| Cox proportional hazards regression analysis involving the response variable <span style="color: #FF0000">time</span>, factor variable <span style="color: #FF0000">ph.ecog</span> and covariate variables <span style="color: #FF0000">sex</span> and <span style="color: #FF0000">age</span>  showed that :
+|
+| **[A]** A cox proportional hazards regression model applied on the response variable <span style="color: #FF0000">time</span> and factor variable <span style="color: #FF0000">ph.ecog</span> which includes the covariate variable <span style="color: #FF0000">sex</span> but excludes the covariate variable <span style="color: #FF0000">age</span> was determined with the most optimal fit during stepwise variable selection. Furthermore, the aforementioned model was considered the most appropriate as the final survival model since the addition of the covariate variable <span style="color: #FF0000">sex</span> significantly improved model fit (p<0.001, Likelihood Ratio Test). However, the further inclusion of an interaction term <span style="color: #FF0000">ph.ecog * sex</span> into the model did not show any significant improvement to model fit (p=0.789, Likelihood Ratio Test).
+|
+| **[B]** Using the final survival model controlled for <span style="color: #FF0000">sex</span>, association between <span style="color: #FF0000">ph.ecog</span> and survival time <span style="color: #FF0000">time</span> was statistically significant with: 
+|      **[B.1]** An estimated hazard ratio of 0.58 (95% CI 0.40, 0.84; p=0.004, Cox Proportional Hazards Model Wald Test) for <span style="color: #FF0000">ph.ecog=Ambulatory</span> (lower hazard and higher survival rate for advanced lung cancer patients with physician-rated ECOG score = 1) relative to <span style="color: #FF0000">ph.ecog=Bedridden</span> (higher hazard and lower survival rate for advanced lung cancer patients with physician-rated ECOG score = 2 or 3)
+|      **[B.2]** An estimated hazard ratio of 0.38 (95% CI 0.25, 0.59; p<0.001, Cox Proportional Hazards Model Wald Test) for <span style="color: #FF0000">ph.ecog=Asymptomatic</span> (lower hazard and higher survival rate for advanced lung cancer patients with physician-rated ECOG score = 0) relative to <span style="color: #FF0000">ph.ecog=Bedridden</span> (higher hazard and lower survival rate for advanced lung cancer patients with physician-rated ECOG score = 2 or 3)
+|
+| **[C]** Using the final survival model controlled for <span style="color: #FF0000">ph.ecog</span>, association between <span style="color: #FF0000">sex</span> and survival time <span style="color: #FF0000">time</span> was statistically significant with an estimated hazard ratio of 0.58 (95% CI 0.42, 0.80; p=0.001, Cox Proportional Hazards Model Wald Test) for <span style="color: #FF0000">sex=Female</span> (lower hazard and higher survival rate for advanced lung cancer patients who are females) relative to <span style="color: #FF0000">sex=Male</span> (higher hazard and lower survival rate for advanced lung cancer patients who are males). 
+|
+| **[D]** The estimated Harrel's concordance index (proportion of advanced lung cancer patients that the model can correctly order in terms of survival times when adjusted for censoring) for the final survival model was determined to be relatively satisfactory at 0.64 (optimistic) and 0.63 (optimism-corrected after a 500-cycle internal bootstrap validation).
+|
+| **[E]** The scaled Schoenfield residuals showed random patterns when plotted against time indicating no violation of the proportional hazards assumption. The proportional hazards assumption was further supported by the non-significant relationship between the scaled Schoenfield residuals and time based from the global (p=0.1514) and individual (p=0.2188 for <span style="color: #FF0000">ph.ecpg</span>, 0.1001 for <span style="color: #FF0000">sex</span> ) statistical test results. 
+|
+| **[F]** The deviance residuals did not show any severely influential observations when plotted against the observations and the dfbeta residuals were reasonably symmetrical when plotted against the observations - all indicating a fairly good model fit for the final survival model. Due to the absence of a numeric covariate, no fitted line with lowess function of the martingale residuals obtained for the null cox model was obtained.
+|
+### 1.5.1 Univariate Cox Proportional Hazards Model
+```{r section_1.5.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Formulating a Univariate Cox Proportional Hazards Model
+# independently for the Factor Variable
+##################################
+(DBP.Analysis.UnivariateCoxPH.PhEcog <- coxph(Surv(time, status) ~ ph.ecog, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.UnivariateCoxPH.PhEcog)
+
+tbl_regression(DBP.Analysis.UnivariateCoxPH.PhEcog,
+               exponentiate = TRUE)
+
+
+(ggforest(DBP.Analysis.UnivariateCoxPH.PhEcog,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Univariate Cox Proportional Hazards Model
+# involving the Factor Variable
+##################################
+DBP.Analysis.UnivariateCoxPH.PhEcog.KaplanMeierEstimates <- survfit(DBP.Analysis.UnivariateCoxPH.PhEcog, data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.PhEcog <- ggsurvplot(DBP.Analysis.UnivariateCoxPH.PhEcog.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.PhEcog,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Univariate Cox Proportional Hazards Model
+# independently for the Covariate Variable
+##################################
+(DBP.Analysis.UnivariateCoxPH.Sex <- coxph(Surv(time, status) ~ sex, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.UnivariateCoxPH.Sex)
+
+tbl_regression(DBP.Analysis.UnivariateCoxPH.Sex,
+               exponentiate = TRUE)
+
+
+(ggforest(DBP.Analysis.UnivariateCoxPH.Sex,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Univariate Cox Proportional Hazards Model
+# involving the Covariate Variable
+##################################
+DBP.Analysis.UnivariateCoxPH.Sex.KaplanMeierEstimates <- survfit(DBP.Analysis.UnivariateCoxPH.Sex, data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Sex <- ggsurvplot(DBP.Analysis.UnivariateCoxPH.Sex.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ Sex)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Sex,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Univariate Cox Proportional Hazards Model
+# independently for the Covariate Variable
+##################################
+(DBP.Analysis.UnivariateCoxPH.Age <- coxph(Surv(time, status) ~ age, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.UnivariateCoxPH.Age)
+
+tbl_regression(DBP.Analysis.UnivariateCoxPH.Age,
+               exponentiate = TRUE)
+
+
+(ggforest(DBP.Analysis.UnivariateCoxPH.Age,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Univariate Cox Proportional Hazards Model
+# involving the Covariate Variable
+##################################
+DBP.Analysis.UnivariateCoxPH.Age.KaplanMeierEstimates <- survfit(DBP.Analysis.UnivariateCoxPH.Age, data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Age <- ggsurvplot(DBP.Analysis.UnivariateCoxPH.Age.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ Age)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Age,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Univariate Cox Proportional Hazards Model
+# individually for the Factor and Covariate Variables
+##################################
+tbl_survfit(
+  list(survfit(Surv(time, status) ~ 1, data = DBP.Analysis.Filtered),
+    survfit(Surv(time, status) ~ ph.ecog, data = DBP.Analysis.Filtered),
+    survfit(Surv(time, status) ~ sex, data = DBP.Analysis.Filtered),
+        survfit(Surv(time, status) ~ age, data = DBP.Analysis.Filtered)),
+  probs = 0.5,
+  label_header = "**Median Survival**") %>%
+  add_n() %>%
+  add_nevent()
+
+```
+
+### 1.5.2 Multivariate Cox Proportional Hazards Model
+```{r section_1.5.2, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Formulating a Multivariate Cox Proportional Hazards Model
+# with both the Factor and Covariate Variables
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge <- coxph(Surv(time, status) ~ ph.ecog + sex + age, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge)
+
+tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge,
+               exponentiate = TRUE)
+
+(DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+##################################
+DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge , data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score + Sex + Age)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Multivariate Cox Proportional Hazards Model
+# with both the Factor and Covariate Variables
+# including their interaction
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction <- coxph(Surv(time, status) ~ ph.ecog + sex + age + ph.ecog*sex*age, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction)
+
+tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
+               exponentiate = TRUE)
+
+(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+# including their interaction
+##################################
+DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction, data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge.WithInteraction <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score * Sex * Age)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Multivariate Cox Proportional Hazards Model
+# with both the Factor and Covariate Variables
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSex <- coxph(Surv(time, status) ~ ph.ecog + sex , data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSex)
+
+tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+               exponentiate = TRUE)
+
+(DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSex.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+##################################
+DBP.Analysis.MultivariateCoxPH.PhEcogSex.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSex , data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSex.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score + Sex)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating a Multivariate Cox Proportional Hazards Model
+# with both the Factor and Covariate Variables
+# including their interaction
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction <- coxph(Surv(time, status) ~ ph.ecog + sex + ph.ecog*sex, data = DBP.Analysis.Filtered))
+
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction)
+
+tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction,
+               exponentiate = TRUE)
+
+(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+# including their interaction
+##################################
+DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction, data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.WithInteraction <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score * Sex)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.WithInteraction,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Formulating complete and reduced
+# Multivariate Cox Proportional Hazards Models
+# involving the Factor and Covariate Variables
+##################################
+DBP.Analysis.SurvivalResponse <- "Surv(time, status)"
+DBP.Analysis.SurvivalPredictorComplete <- c("ph.ecog", "sex", "age")
+DBP.Analysis.SurvivalPredictorReduced <- c("ph.ecog", "sex")
+
+DBP.Analysis.CoxPHModelSummary <- DBP.Analysis.Filtered %>%
+  finalfit(DBP.Analysis.SurvivalResponse,
+           DBP.Analysis.SurvivalPredictorComplete,
+           DBP.Analysis.SurvivalPredictorReduced,
+           keep_models = TRUE,
+           add_dependent_label = FALSE) %>%
+  rename("Overall Survival" = label) %>%
+  rename(" " = levels) %>%
+  rename("  " = all)
+
+kable(DBP.Analysis.CoxPHModelSummary)
+
+```
+
+### 1.5.3 Model Selection
+```{r section_1.5.3, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Applying Stepwise Variable Selection
+##################################
+DBP.Analysis.MultivariateCoxPH.StepwiseSelection <- stepAIC(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge, 
+                      direction = "both", 
+                      trace = TRUE)
+summary(DBP.Analysis.MultivariateCoxPH.StepwiseSelection)
+
+##################################
+# Reusing formulated models
+##################################
+summary(DBP.Analysis.UnivariateCoxPH.PhEcog)
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSex)
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction)
+
+##################################
+# Formulating the linear predictors
+# for the formulated Univariate Cox Proportional Hazards Models
+##################################
+DBP.Analysis.Filtered$LP.Univariate.PhEcog <- predict(DBP.Analysis.UnivariateCoxPH.PhEcog, type = "lp")
+
+##################################
+# Formulating the linear predictors
+# for the formulated Multivariate Cox Proportional Hazards Models
+##################################
+DBP.Analysis.Filtered$LP.Multivariate.PhEcogSex <- predict(DBP.Analysis.MultivariateCoxPH.PhEcogSex, type = "lp")
+DBP.Analysis.Filtered$LP.Multivariate.PhEcogSex.WithInteraction <- predict(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction, type = "lp")
+
+##################################
+# Conducting a likelihood ratio test between nested models
+# including the formulated Multivariate Cox Proportional Hazards Models
+# involving the Factor variable only
+# and both Factor and Covariate variables
+##################################
+(LikelihoodRatioTest.CoxPHPhEcog.CoxPHPhEcogSex <- anova(DBP.Analysis.UnivariateCoxPH.PhEcog,
+      DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+      test="LRT"))
+
+##################################
+# Conducting a likelihood ratio test between nested models
+# including the formulated Multivariate Cox Proportional Hazards Models
+# involving both Factor and Covariate variables only
+# and both Factor and Covariate variables including their interaction
+##################################
+(LikelihoodRatioTest.CoxPHPhEcogSex.CoxPHPhEcogSexWithInteraction <- anova(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+      DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction,
+      test="LRT"))
+```
+
+### 1.5.4 Model Performance Validation
+```{r section_1.5.4, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Measuring the Harrel's Concordance Index
+# for the formulated Univariate Cox Proportional Hazards Model
+# involving the Factor variable
+##################################
+rcorrcens(formula = Surv(time, status) ~ I(-1 * LP.Univariate.PhEcog), data = DBP.Analysis.Filtered)
+
+LP.Univariate.PhEcog.Concordance <- survConcordance(Surv(time, status) ~ LP.Univariate.PhEcog,
+                                               data = DBP.Analysis.Filtered)
+
+(LP.Univariate.PhEcog.Concordance$concordance)
+ 
+DBP.Analysis.UnivariateCoxPH.PhEcog.Validation <- cph(Surv(time, status) ~ ph.ecog,
+                                                     x=TRUE,
+                                                     y=TRUE,
+                                                     data = DBP.Analysis.Filtered)
+
+set.seed (88888888)
+DBP.Analysis.UnivariateCoxPH.PhEcog.Validation.Summary <- validate(DBP.Analysis.UnivariateCoxPH.PhEcog.Validation, B =500)
+
+(DBP.Analysis.UnivariateCoxPH.PhEcog.ConcordanceIndex.Optimistic <- (DBP.Analysis.UnivariateCoxPH.PhEcog.Validation.Summary[1,1]/2)+0.50)
+(DBP.Analysis.UnivariateCoxPH.PhEcog.ConcordanceIndex.OptimismCorrected <- (DBP.Analysis.UnivariateCoxPH.PhEcog.Validation.Summary[1,5]/2)+0.50)
+
+##################################
+# Measuring the Harrel's Concordance Index
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+##################################
+rcorrcens(formula = Surv(time, status) ~ I(-1 * LP.Multivariate.PhEcogSex), data = DBP.Analysis.Filtered)
+
+LP.Multivariate.PhEcogSex.Concordance <- survConcordance(Surv(time, status) ~ LP.Multivariate.PhEcogSex,
+                                                        data = DBP.Analysis.Filtered)
+
+(LP.Multivariate.PhEcogSex.Concordance$concordance)
+
+DBP.Analysis.Multivariate.PhEcogSex.Validation <- cph(Surv(time, status) ~ ph.ecog + sex,
+                                                     x=TRUE,
+                                                     y=TRUE,
+                                                     data = DBP.Analysis.Filtered)
+
+set.seed (88888888)
+DBP.Analysis.Multivariate.PhEcogSex.Validation.Summary <- validate(DBP.Analysis.Multivariate.PhEcogSex.Validation, B =500)
+
+(DBP.Analysis.Multivariate.PhEcogSex.ConcordanceIndex.Optimistic <- (DBP.Analysis.Multivariate.PhEcogSex.Validation.Summary[1,1]/2)+0.50)
+(DBP.Analysis.Multivariate.PhEcogSex.ConcordanceIndex.OptimismCorrected <- (DBP.Analysis.Multivariate.PhEcogSex.Validation.Summary[1,5]/2)+0.50)
+
+##################################
+# Measuring the Harrel's Concordance Index
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+# including their interaction
+##################################
+rcorrcens(formula = Surv(time, status) ~ I(-1 * LP.Multivariate.PhEcogSex.WithInteraction), data = DBP.Analysis.Filtered)
+
+LP.Multivariate.PhEcogSex.WithInteraction.Concordance <- survConcordance(Surv(time, status) ~ LP.Multivariate.PhEcogSex.WithInteraction, data = DBP.Analysis.Filtered)
+
+(LP.Multivariate.PhEcogSex.WithInteraction.Concordance$concordance)
+
+DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation <- cph(Surv(time, status) ~ ph.ecog + sex + ph.ecog*sex,
+                                                     x=TRUE,
+                                                     y=TRUE,
+                                                     data = DBP.Analysis.Filtered)
+
+set.seed (88888888)
+DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation.Summary <- validate(DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation, B =500)
+
+(DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.ConcordanceIndex.Optimistic <- (DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation.Summary[1,1]/2)+0.50)
+(DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.ConcordanceIndex.OptimismCorrected <- (DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation.Summary[1,5]/2)+0.50)
+
+```
+
+### 1.5.5 Model Diagnostics
+```{r section_1.5.5, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
+##################################
+# Reusing selected model
+##################################
+summary(DBP.Analysis.MultivariateCoxPH.PhEcogSex)
+
+
+tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+               exponentiate = TRUE)
+
+(DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSex.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+          data=DBP.Analysis.Filtered,
+          main = "",
+          fontsize = 1.5))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# for the formulated Multivariate Cox Proportional Hazards Model
+# involving the Factor and Covariate variables
+##################################
+DBP.Analysis.MultivariateCoxPH.PhEcogSex.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSex , data = DBP.Analysis.Filtered)
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSex.KaplanMeierEstimates,
+                                                     title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score + Sex)",
+                                                     pval = FALSE,
+                                                     conf.int = TRUE,
+                                                     conf.int.style = "ribbon",
+                                                     xlab = "Time (Days)",
+                                                     ylab="Estimated Survival Probability",
+                                                     break.time.by = 100,
+                                                     ggtheme = theme_bw(),
+                                                     risk.table = "abs_pct",
+                                                     risk.table.title="Number at Risk (Survival Probability)",
+                                                     risk.table.y.text.col = FALSE,
+                                                     risk.table.y.text = TRUE,
+                                                     fontsize = 5,
+                                                     ncensor.plot = FALSE,
+                                                     surv.median.line = "hv",
+                                                     palette = c("#000000"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Plotting the Kaplan-Meier survival curves
+# of the Factor variable adjusted by the Covariate variable 
+# using the formulated Multivariate Cox Proportional Hazards Model
+##################################
+
+(DBP.PhEcogAdjustedBySex <- with(DBP.Analysis.Filtered,
+                                 data.frame(ph.ecog = c("Bedridden", "Ambulatory","Asymptomatic"),
+                                            sex = c("Male", "Male", "Male"))))
+
+
+DBP.Analysis.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex.KaplanMeierEstimates <- survfit(DBP.Analysis.MultivariateCoxPH.PhEcogSex, 
+                                                                                             newdata = DBP.PhEcogAdjustedBySex, 
+                                                                                             data=DBP.Analysis.Filtered)
+
+
+SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex <- ggsurvplot(DBP.Analysis.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex.KaplanMeierEstimates,
+                                                                         title = "Kaplan-Meier Survival Curves (CoxPH Model : Survival ~ ECOG Score + Sex)",
+                                                                         pval = TRUE,
+                                                                         conf.int = TRUE,
+                                                                         conf.int.style = "ribbon",
+                                                                         xlab = "Time (Days)",
+                                                                         ylab="Estimated Survival Probability",
+                                                                         break.time.by = 100,
+                                                                         ggtheme = theme_bw(),
+                                                                         risk.table = "abs_pct",
+                                                                         risk.table.title="Number at Risk (Survival Probability)",
+                                                                         risk.table.y.text.col = FALSE,
+                                                                         risk.table.y.text = TRUE,
+                                                                         fontsize = 5,
+                                                                         ncensor.plot = FALSE,
+                                                                         surv.median.line = "hv",
+                                                                         legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
+                                                                         palette = c("#00CC66","#3259A0","#FF5050"))
+
+ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex,
+      font.title = c(25,"bold"),
+      font.x = c(20,"bold"),
+      font.y = c(20,"bold"),
+      font.legend=c(20,"bold"),
+      font.xtickslab=c(15,"bold","black"),
+      font.ytickslab=c(15,"bold","black"))
+
+##################################
+# Testing the proportional hazards assumption
+# based on the scaled Schoenfield residuals
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSex.PHAssumptionCheck <- cox.zph(DBP.Analysis.MultivariateCoxPH.PhEcogSex))
+
+##################################
+# Formulating the graphical verification
+# of the proportional hazards assumption test results
+# using the scaled Schoenfeld residuals against time
+##################################
+(DBP.Analysis.MultivariateCoxPH.PhEcogSex.PHAssumptionPlot <- ggcoxzph(DBP.Analysis.MultivariateCoxPH.PhEcogSex.PHAssumptionCheck,
+         point.col = "red",
+         point.size = 3,
+         point.shape = 19,
+         point.alpha = 0.80,
+  ggtheme = theme_survminer(),
+  font.main = c(25,"bold"),
+  font.x = c(20,"bold"),
+  font.y = c(20,"bold"),
+  font.xtickslab=c(15,"bold","black"),
+  font.ytickslab=c(15,"bold","black")))
+
+##################################
+# Formulating the graphical verification
+# to evaluate potential influential observations
+# using the deviance residuals against observations
+##################################
+ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+ type = "deviance",
+ ox.scale = "observation.id",
+ point.col = "red",
+ point.size = 3,
+ point.shape = 19,
+ point.alpha = 0.80,
+ ggtheme = theme_survminer(),
+ font.main = c(25,"bold"),
+ font.x = c(20,"bold"),
+ font.y = c(20,"bold"),
+ font.xtickslab=c(15,"bold","black"),
+ font.ytickslab=c(15,"bold","black"),
+ main = "Deviance Residuals by Observation")
+
+##################################
+# Formulating the graphical verification
+# to evaluate symmetry
+# using the dfbeta residuals against observations
+##################################
+ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
+ type = "dfbeta",
+ ox.scale = "observation.id",
+ point.col = "red",
+ point.size = 3,
+ point.shape = 19,
+ point.alpha = 0.80,
+ ggtheme = theme_survminer(),
+ font.main = c(25,"bold"),
+ font.x = c(20,"bold"),
+ font.y = c(20,"bold"),
+ font.xtickslab=c(15,"bold","black"),
+ font.ytickslab=c(15,"bold","black"),
+ main = "Dfbeta Residuals by Observation")
+
+##################################
+# Formulating the graphical verification
+# to evaluate linearity of the numeric covariate
+# using the martingale residuals of the null cox proportional hazards model
+# and the individual values of the numeric covariate
+##################################
+# No graphical verification proceeded
+# due to the absence of a numeric covariate
+# on the final selected model
+```
+
+##  1.6 References
+|
+| **[Book]** [Survival Analysis : A Self-Learning Text](https://link.springer.com/book/10.1007/978-1-4419-6646-9) by David Kleinbaum and Mitchel Klein
+| **[Book]** [Applied Survival Analysis Using R](https://link.springer.com/book/10.1007/978-3-319-31245-3) by Dirk Moore
+| **[Book]** [R for Health Data Science](https://argoshare.is.ed.ac.uk/healthyr_book/chap10-h1.html) by Ewen Harrison and Riinu Pius
+| **[Book]** [Supervised Machine Learning](https://bookdown.org/mpfoley1973/supervised-ml/) by Michael Foley
+| **[Book]** [Data Science for Biological, Medical and Health Research](https://thomaselove.github.io/432-notes/index.html) by Thomas Love
+| **[Article]** [Survival Analysis](http://www.sthda.com/english/wiki/survival-analysis) by Alboukadel Kassambara
+| **[Article]** [Survival Analysis in R](https://www.emilyzabor.com/tutorials/survival_analysis_in_r_tutorial.html) by Emily Zabor
+| **[Article]** [Survival Analysis with R](https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/) by Joseph Rickert
+| **[Article]** [Assessment of Discrimination in Survival Analysis](https://rstudio-pubs-static.s3.amazonaws.com/3506_36a9509e9d544386bd3e69de30bca608.html) by R-Studio Team
+| **[Article]** [Cox Model Assumptions](http://www.sthda.com/english/wiki/cox-model-assumptions#testing-non-linearity) by Alboukadel Kassambara
+| **[Publication]** [Survival Analysis Part I: Basic Concepts and First Analyses](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394262/) by Taane Clark (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part II: Multivariate Data Analysis – An Introduction to Concepts and Methods](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394368/) by Mike Bradburn (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part III: Multivariate Data Analysis – Choosing a Model and Assessing its Adequacy and Fit](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2376927/) by Mike Bradburn (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part IV: Further Concepts and Methods in Survival Analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394469/) by Taane Clark (British Journal of Cancer)
+| **[Tutorial]** [Survival Analysis / Time-To-Event Analysis in R](https://campus.datacamp.com/courses/survival-analysis-in-r/what-is-survival-analysis?ex=1) by Heidi Seibold (Datacamp)
+| **[R Package]** [moments](https://cran.r-project.org/web/packages/moments/index.html) by Lukasz Komsta and Frederick Novomestky
+| **[R Package]** [car](https://cran.r-project.org/web/packages/car/vignettes/embedding.pdf) by John Fox and Sanford Weisberg
+| **[R Package]** [multcomp](https://cran.r-project.org/web/packages/multcomp/vignettes/generalsiminf.pdf) by Torsten Hothorn, Frank Bretz and Peter Westfall
+| **[R Package]** [effects](https://cran.r-project.org/web/packages/effects/vignettes/methods-supported-by-effects.pdf) by John Fox and Sanford Weisberg
+| **[R Package]** [psych](http://personality-project.org/r/overview.pdf) by William Revelle
+| **[R Package]** [ggplot2](https://cran.r-project.org/web/packages/ggplot2/) by Hadley Wickham
+| **[R Package]** [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html) by Hadley Wickham
+| **[R Package]** [ggpubr](https://cran.r-project.org/web/packages/ggpubr/index.html) by Alboukadel Kassambara
+| **[R Package]** [rstatix](https://mran.microsoft.com/web/packages/rstatix/index.html) by Alboukadel Kassambara
+| **[R Package]** [ggfortify](https://cran.r-project.org/web/packages/ggfortify/index.html) by Yuan Tang
+| **[R Package]** [trend](https://cran.r-project.org/web/packages/trend/index.html) by Thorsten Pohlert
+| **[R Package]** [survival](https://cran.r-project.org/web/packages/survival/) by Terry Therneau
+| **[R Package]** [rms](https://cran.r-project.org/web/packages/rms/index.html) by Frank Harrell
+| **[R Package]** [survminer](https://cran.r-project.org/web/packages/survminer/index.html) by Alboukadel Kassambara
+| **[R Package]** [Hmisc](https://cran.r-project.org/web/packages/Hmisc/index.html) by Frank Harrel
+| **[R Package]** [finalfit](https://cran.r-project.org/web/packages/finalfit/index.html) by Ewen Harrison
+| **[R Package]** [knitr](https://cran.r-project.org/web/packages/knitr/) by Yihui Xie
+| **[R Package]** [gtsummary](https://cloud.r-project.org/web/packages/gtsummary/index.html) by Daniel Sjoberg
+|
+|
+|
+|
+|
