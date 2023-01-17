@@ -615,7 +615,7 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
       font.ytickslab=c(15,"bold","black"))
 ```
 
-##  1.5 Model Development
+##  1.5 Model Development Summary
 |
 | Cox proportional hazards regression analysis involving the response variable <span style="color: #FF0000">time</span>, factor variable <span style="color: #FF0000">ph.ecog</span> and covariate variables <span style="color: #FF0000">sex</span> and <span style="color: #FF0000">age</span>  showed that :
 |
@@ -1316,7 +1316,7 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 # on the final selected model
 ```
 
-##  1.6 References
+# **2. References**
 |
 | **[Book]** [Survival Analysis : A Self-Learning Text](https://link.springer.com/book/10.1007/978-1-4419-6646-9) by David Kleinbaum and Mitchel Klein
 | **[Book]** [Applied Survival Analysis Using R](https://link.springer.com/book/10.1007/978-3-319-31245-3) by Dirk Moore
