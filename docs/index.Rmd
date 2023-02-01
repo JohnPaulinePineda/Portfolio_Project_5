@@ -1323,16 +1323,6 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 | **[Book]** [R for Health Data Science](https://argoshare.is.ed.ac.uk/healthyr_book/chap10-h1.html) by Ewen Harrison and Riinu Pius
 | **[Book]** [Supervised Machine Learning](https://bookdown.org/mpfoley1973/supervised-ml/) by Michael Foley
 | **[Book]** [Data Science for Biological, Medical and Health Research](https://thomaselove.github.io/432-notes/index.html) by Thomas Love
-| **[Article]** [Survival Analysis](http://www.sthda.com/english/wiki/survival-analysis) by Alboukadel Kassambara
-| **[Article]** [Survival Analysis in R](https://www.emilyzabor.com/tutorials/survival_analysis_in_r_tutorial.html) by Emily Zabor
-| **[Article]** [Survival Analysis with R](https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/) by Joseph Rickert
-| **[Article]** [Assessment of Discrimination in Survival Analysis](https://rstudio-pubs-static.s3.amazonaws.com/3506_36a9509e9d544386bd3e69de30bca608.html) by R-Studio Team
-| **[Article]** [Cox Model Assumptions](http://www.sthda.com/english/wiki/cox-model-assumptions#testing-non-linearity) by Alboukadel Kassambara
-| **[Publication]** [Survival Analysis Part I: Basic Concepts and First Analyses](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394262/) by Taane Clark (British Journal of Cancer)
-| **[Publication]** [Survival Analysis Part II: Multivariate Data Analysis – An Introduction to Concepts and Methods](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394368/) by Mike Bradburn (British Journal of Cancer)
-| **[Publication]** [Survival Analysis Part III: Multivariate Data Analysis – Choosing a Model and Assessing its Adequacy and Fit](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2376927/) by Mike Bradburn (British Journal of Cancer)
-| **[Publication]** [Survival Analysis Part IV: Further Concepts and Methods in Survival Analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394469/) by Taane Clark (British Journal of Cancer)
-| **[Tutorial]** [Survival Analysis / Time-To-Event Analysis in R](https://campus.datacamp.com/courses/survival-analysis-in-r/what-is-survival-analysis?ex=1) by Heidi Seibold (Datacamp)
 | **[R Package]** [moments](https://cran.r-project.org/web/packages/moments/index.html) by Lukasz Komsta and Frederick Novomestky
 | **[R Package]** [car](https://cran.r-project.org/web/packages/car/vignettes/embedding.pdf) by John Fox and Sanford Weisberg
 | **[R Package]** [multcomp](https://cran.r-project.org/web/packages/multcomp/vignettes/generalsiminf.pdf) by Torsten Hothorn, Frank Bretz and Peter Westfall
@@ -1351,6 +1341,16 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 | **[R Package]** [finalfit](https://cran.r-project.org/web/packages/finalfit/index.html) by Ewen Harrison
 | **[R Package]** [knitr](https://cran.r-project.org/web/packages/knitr/) by Yihui Xie
 | **[R Package]** [gtsummary](https://cloud.r-project.org/web/packages/gtsummary/index.html) by Daniel Sjoberg
+| **[Article]** [Survival Analysis](http://www.sthda.com/english/wiki/survival-analysis) by Alboukadel Kassambara
+| **[Article]** [Survival Analysis in R](https://www.emilyzabor.com/tutorials/survival_analysis_in_r_tutorial.html) by Emily Zabor
+| **[Article]** [Survival Analysis with R](https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/) by Joseph Rickert
+| **[Article]** [Assessment of Discrimination in Survival Analysis](https://rstudio-pubs-static.s3.amazonaws.com/3506_36a9509e9d544386bd3e69de30bca608.html) by R-Studio Team
+| **[Article]** [Cox Model Assumptions](http://www.sthda.com/english/wiki/cox-model-assumptions#testing-non-linearity) by Alboukadel Kassambara
+| **[Publication]** [Survival Analysis Part I: Basic Concepts and First Analyses](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394262/) by Taane Clark (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part II: Multivariate Data Analysis – An Introduction to Concepts and Methods](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394368/) by Mike Bradburn (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part III: Multivariate Data Analysis – Choosing a Model and Assessing its Adequacy and Fit](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2376927/) by Mike Bradburn (British Journal of Cancer)
+| **[Publication]** [Survival Analysis Part IV: Further Concepts and Methods in Survival Analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394469/) by Taane Clark (British Journal of Cancer)
+| **[Tutorial]** [Survival Analysis / Time-To-Event Analysis in R](https://campus.datacamp.com/courses/survival-analysis-in-r/what-is-survival-analysis?ex=1) by Heidi Seibold (Datacamp)
 |
 |
 |
