@@ -19,6 +19,8 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 |
 | This document presents a non-exhaustive list of survival analysis and descriptive modelling methods for a three-group right-censored data with time-independent variables using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.    
 |
+| Survival analysis corresponds to a set of statistical approaches for time-to-event data, where the outcome variable of interest is the time until an event occurs. Descriptive modelling involves the formulation of statistical models to identify patterns and relationships that can be used for statistical inferences given the predictors and response variables. The methods applied in this study (mostly contained in the <mark style="background-color: #CCECFF">**survival**</mark> package) attempt to explore the relationship between factors and both the survival time and event outcomes, while evaluating their effects through statistical hypotheses testing.
+|
 ##  1.1 Sample Data
 |
 | The <mark style="background-color: #EEEEEE;color: #FF0000">**Cancer**</mark> dataset from the book  <mark style="background-color: #CCECFF">**Supervised Machine Learning**</mark> was used for this illustrated example.
