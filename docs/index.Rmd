@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 ```
 # **1. Table of Contents**
 |
-| This document presents a non-exhaustive list of survival analysis and descriptive modelling methods for a three-group right-censored data with time-independent variables using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.    
+| This project implements the survival analysis and descriptive modelling steps for a two-group right-censored data with time-independent variables using the **Cox Proportional Hazards Model** with various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>. The **Kaplan-Meier Survival Curves** and **Log-Rank Test** were applied during the differential analysis of the survival data between groups. All predictors’ prognostic significance were individually and simultaneously evaluated using **Univariate and Multivariate Cox Proportional Hazards Models**, respectively. The discrimination power of the resulting models were assessed using the **Harrel’s Concordance Index**. The final prognostic model was internally validated using Bootstrap Validation with Optimism Estimation and evaluated for compliance on all required model assumptions using the appropriate diagnostics. 
 |
 | Survival analysis corresponds to a set of statistical approaches for time-to-event data, where the outcome variable of interest is the time until an event occurs. Descriptive modelling involves the formulation of statistical models to identify patterns and relationships that can be used for statistical inferences given the predictors and response variables. The methods applied in this study (mostly contained in the <mark style="background-color: #CCECFF">**survival**</mark> package) attempt to explore the relationship between factors and both the survival time and event outcomes, while evaluating their effects through statistical hypotheses testing.
 |
@@ -618,6 +618,10 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
 ```
 
 ##  1.5 Model Development Summary
+|
+| [Cox Proportional Hazards](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1972.tb00899.x) examines the relationship between a hazard function and a set of covariates by assuming that predictors act multiplicatively on the hazard function without any explicit assumption of its distributional form. The model is semi-parametric because while the baseline hazard can take any form, the covariates enter the model linearly. 
+|
+| [Concordance Index](https://jamanetwork.com/journals/jama/article-abstract/372568) is a rank correlation measure between a predictor and a possibly censored outcome with an event or censoring indicator. In survival analysis, a pair of patients is called concordant if the risk of the event predicted by a model is lower for the patient who experiences the event at a later time point. The concordance probability (C-index) is the frequency of concordant pairs among all pairs of subjects which can be used to measure and compare the discrimination power of risk prediction models.
 |
 | Cox proportional hazards regression analysis involving the response variable <span style="color: #FF0000">time</span>, factor variable <span style="color: #FF0000">ph.ecog</span> and covariate variables <span style="color: #FF0000">sex</span> and <span style="color: #FF0000">age</span>  showed that :
 |
@@ -1348,6 +1352,8 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 | **[Article]** [Survival Analysis with R](https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/) by Joseph Rickert
 | **[Article]** [Assessment of Discrimination in Survival Analysis](https://rstudio-pubs-static.s3.amazonaws.com/3506_36a9509e9d544386bd3e69de30bca608.html) by R-Studio Team
 | **[Article]** [Cox Model Assumptions](http://www.sthda.com/english/wiki/cox-model-assumptions#testing-non-linearity) by Alboukadel Kassambara
+| **[Publication]** [Regression Models and Life-Tables](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1972.tb00899.x) by David Cox (Royal Statistical Society)
+| **[Publication]** [Evaluating the Yield of Medical Tests](https://jamanetwork.com/journals/jama/article-abstract/372568) by Frank Harrell, Robert Califf, David Pryor, Kerry Lee and Robert Rosati (Journal of the American Medical Association)
 | **[Publication]** [Survival Analysis Part I: Basic Concepts and First Analyses](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394262/) by Taane Clark (British Journal of Cancer)
 | **[Publication]** [Survival Analysis Part II: Multivariate Data Analysis – An Introduction to Concepts and Methods](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2394368/) by Mike Bradburn (British Journal of Cancer)
 | **[Publication]** [Survival Analysis Part III: Multivariate Data Analysis – Choosing a Model and Assessing its Adequacy and Fit](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2376927/) by Mike Bradburn (British Journal of Cancer)
