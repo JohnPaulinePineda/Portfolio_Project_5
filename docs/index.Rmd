@@ -51,6 +51,11 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 |           **[B.8.1]** <span style="color: #FF0000">meal.cal</span> = calories consumed at meals
 |      **[B.9]** 1/9 Covariate variable = <span style="color: #FF0000">wt.loss</span> (numeric)
 |           **[B.9.1]** <span style="color: #FF0000">wt.loss</span> = weight loss in last six months
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.1, warning=FALSE, message=FALSE}
 ##################################
 # Loading R libraries
@@ -131,6 +136,8 @@ PDA <- DBP.Analysis
 
 ```
 
+</details>
+
 ##  1.2 Data Quality Assessment
 |
 | Data quality assessment:
@@ -169,6 +176,10 @@ PDA <- DBP.Analysis
 |      **[B.5]** 1/5 Covariate variable = <span style="color: #FF0000">sex</span> (factor)
 |           **[B.5.1]** <span style="color: #FF0000">sex</span> = patient's sex at birth
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.2, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -354,6 +365,8 @@ DQA.Filtered <- DBP.Analysis.Filtered
 )
 ```
 
+</details>
+
 ##  1.3 Research Question
 |
 | Using the <mark style="background-color: #EEEEEE;color: #FF0000">**cancer**</mark> dataset, survival analysis and modelling will be conducted to investigate the following :
@@ -410,6 +423,11 @@ DQA.Filtered <- DBP.Analysis.Filtered
 | **[B]** Decreasing survival times were consistently observed for advanced lung cancer patients under <span style="color: #FF0000">ph.ecog=Asymptomatic</span>, <span style="color: #FF0000">ph.ecog=Ambulatory</span> and <span style="color: #FF0000">ph.ecog=Bedridden</span> at various sampled durations including <span style="color: #FF0000">time=183 days (6 months)</span> (Asymptomatic=84%, Ambulatory=72%, Bedridden=50%), <span style="color: #FF0000">time=365 days (12 months)</span> (Asymptomatic=54%, Ambulatory=43%, Bedridden=21%), <span style="color: #FF0000">time=548 days (18 months)</span> (Asymptomatic=37%, Ambulatory=26%, Bedridden=11%), <span style="color: #FF0000">time=730 days (24 months)</span> (Asymptomatic=19%, Ambulatory=11%, Bedridden=4%), and <span style="color: #FF0000">time=913 days (32 months)</span> (Asymptomatic=8%, Ambulatory=6%, Bedridden=0%), except for <span style="color: #FF0000">time=1022 days (last recorded follow-up time)</span> where <span style="color: #FF0000">ph.ecog=Ambulatory</span> showed 6% survival while 0% survival was noted for both <span style="color: #FF0000">ph.ecog=Asymptomatic</span> and <span style="color: #FF0000">ph.ecog=Bedridden</span> groups.
 |
 ### 1.4.1 Descriptive Statistics
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.4.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Reusing the dataset
@@ -450,10 +468,16 @@ kable(DBP.Analysis.Filtered.DescriptiveStatistics)
 
 ```
 
+</details>
+
 ### 1.4.2 Kaplan-Meier Survival Curve
 |
 | [Kaplan-Meier Survival Curve](https://link.springer.com/book/10.1007/978-1-4419-6646-9) estimates a survival function which makes no assumptions about how the probability that an observation develops the event changes over time. It is a step function plot obtained from the values of a follow-up table which summarizes the experiences of subjects over a pre-defined follow-up period in a study until the time of the event of interest or the end of the study, whichever comes first. The method involves generating a sequential list of time values corresponding to an event or censoring; determining the counts of event-free observations, event and censored cases for each time value; and computing the survival probabilities based on these counts. 
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.4.2, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Reusing the dataset
@@ -572,10 +596,16 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
       font.ytickslab=c(15,"bold","black"))
 ```
 
+</details>
+
 ### 1.4.3 Log Rank Test
 |
 | [Log Rank Test](https://link.springer.com/book/10.1007/978-1-4419-6646-9) evaluates the null hypothesis of no difference in survival between two or more independent groups by comparing the entire survival experience. The method involves generating a sequential list of time values corresponding to an event or censoring from two or more independent groups; determining the counts of event-free observations, event and expected events for each time value; calculating the Chi-Square test statistic based on these counts; and evaluating the determined test statistic against the rejection region. 
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.4.3, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Conducting the Log Rank Test
@@ -623,6 +653,8 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
       font.ytickslab=c(15,"bold","black"))
 ```
 
+</details>
+
 ##  1.5 Model Development Summary
 |
 | [Cox Proportional Hazards](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1972.tb00899.x) examines the relationship between a hazard function and a set of covariates by assuming that predictors act multiplicatively on the hazard function without any explicit assumption of its distributional form. The model is semi-parametric because while the baseline hazard can take any form, the covariates enter the model linearly. 
@@ -646,6 +678,11 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
 | **[F]** The deviance residuals did not show any severely influential observations when plotted against the observations and the dfbeta residuals were reasonably symmetrical when plotted against the observations - all indicating a fairly good model fit for the final survival model. Due to the absence of a numeric covariate, no fitted line with lowess function of the martingale residuals obtained for the null cox model was obtained.
 |
 ### 1.5.1 Univariate Cox Proportional Hazards Model
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Formulating a Univariate Cox Proportional Hazards Model
@@ -813,7 +850,14 @@ tbl_survfit(
 
 ```
 
+</details>
+
 ### 1.5.2 Multivariate Cox Proportional Hazards Model
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.2, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Formulating a Multivariate Cox Proportional Hazards Model
@@ -1038,7 +1082,14 @@ kable(DBP.Analysis.CoxPHModelSummary)
 
 ```
 
+</details>
+
 ### 1.5.3 Model Selection
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.3, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Applying Stepwise Variable Selection
@@ -1089,7 +1140,14 @@ DBP.Analysis.Filtered$LP.Multivariate.PhEcogSex.WithInteraction <- predict(DBP.A
       test="LRT"))
 ```
 
+</details>
+
 ### 1.5.4 Model Performance Validation
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.4, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Measuring the Harrel's Concordance Index
@@ -1162,7 +1220,14 @@ DBP.Analysis.Multivariate.PhEcogSex.WithInteraction.Validation.Summary <- valida
 
 ```
 
+</details>
+
 ### 1.5.5 Model Diagnostics
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.5, warning=FALSE, message=FALSE, fig.width=15, fig.height=8, fig.align="center"}
 ##################################
 # Reusing selected model
@@ -1327,6 +1392,8 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 # due to the absence of a numeric covariate
 # on the final selected model
 ```
+
+</details>
 
 # **2. References**
 |
