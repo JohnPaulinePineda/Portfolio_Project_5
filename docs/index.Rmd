@@ -526,18 +526,18 @@ SurvivalTimeInWeek.KaplanMeier.Baseline <- ggsurvplot(DBP.Analysis.Filtered.Base
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.Baseline,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Computing the Kaplan-Meier survival estimates
@@ -581,19 +581,19 @@ SurvivalTimeInWeek.KaplanMeier.ByGroup <- ggsurvplot(DBP.Analysis.Filtered.Kapla
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
                                                      palette = c("#00CC66","#3259A0","#FF5050"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 ```
 
 </details>
@@ -638,19 +638,19 @@ SurvivalTimeInWeek.KaplanMeier.ByGroup <- ggsurvplot(DBP.Analysis.Filtered.Kapla
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
                                                      palette = c("#00CC66","#3259A0","#FF5050"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.ByGroup,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 ```
 
 </details>
@@ -699,7 +699,7 @@ tbl_regression(DBP.Analysis.UnivariateCoxPH.PhEcog,
 (ggforest(DBP.Analysis.UnivariateCoxPH.PhEcog,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -721,18 +721,18 @@ SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.PhEcog <- ggsurvplot(DBP.Analysis
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.PhEcog,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Univariate Cox Proportional Hazards Model
@@ -749,7 +749,7 @@ tbl_regression(DBP.Analysis.UnivariateCoxPH.Sex,
 (ggforest(DBP.Analysis.UnivariateCoxPH.Sex,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -771,18 +771,18 @@ SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Sex <- ggsurvplot(DBP.Analysis.Un
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Sex,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Univariate Cox Proportional Hazards Model
@@ -799,7 +799,7 @@ tbl_regression(DBP.Analysis.UnivariateCoxPH.Age,
 (ggforest(DBP.Analysis.UnivariateCoxPH.Age,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -821,18 +821,18 @@ SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Age <- ggsurvplot(DBP.Analysis.Un
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.UnivariateCoxPH.Age,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Univariate Cox Proportional Hazards Model
@@ -873,7 +873,7 @@ tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge,
 (DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -895,18 +895,18 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge <- ggsurvplot(DBP.
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Multivariate Cox Proportional Hazards Model
@@ -923,7 +923,7 @@ tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
 (DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -946,18 +946,18 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge.WithInteraction <-
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSexAge.WithInteraction,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Multivariate Cox Proportional Hazards Model
@@ -973,7 +973,7 @@ tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 (DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSex.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -995,18 +995,18 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex <- ggsurvplot(DBP.Ana
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating a Multivariate Cox Proportional Hazards Model
@@ -1023,7 +1023,7 @@ tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction,
 (DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex.WithInteraction,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -1046,18 +1046,18 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.WithInteraction <- gg
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.WithInteraction,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Formulating complete and reduced
@@ -1241,7 +1241,7 @@ tbl_regression(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
 (DBP.Analysis.MultivariateCoxPH.DBP.Analysis.MultivariateCoxPH.PhEcogSex.ForestPlot <- ggforest(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
           data=DBP.Analysis.Filtered,
           main = "",
-          fontsize = 1.5))
+          fontsize = 0.9))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -1263,18 +1263,18 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex <- ggsurvplot(DBP.Ana
                                                      risk.table.title="Number at Risk (Survival Probability)",
                                                      risk.table.y.text.col = FALSE,
                                                      risk.table.y.text = TRUE,
-                                                     fontsize = 5,
+                                                     fontsize = 3,
                                                      ncensor.plot = FALSE,
                                                      surv.median.line = "hv",
                                                      palette = c("#000000"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Plotting the Kaplan-Meier survival curves
@@ -1305,19 +1305,19 @@ SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex <
                                                                          risk.table.title="Number at Risk (Survival Probability)",
                                                                          risk.table.y.text.col = FALSE,
                                                                          risk.table.y.text = TRUE,
-                                                                         fontsize = 5,
+                                                                         fontsize = 3,
                                                                          ncensor.plot = FALSE,
                                                                          surv.median.line = "hv",
                                                                          legend.labs = c("Bedridden", "Ambulatory", "Asymptomatic"),
                                                                          palette = c("#00CC66","#3259A0","#FF5050"))
 
 ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedBySex,
-      font.title = c(25,"bold"),
-      font.x = c(20,"bold"),
-      font.y = c(20,"bold"),
-      font.legend=c(20,"bold"),
-      font.xtickslab=c(15,"bold","black"),
-      font.ytickslab=c(15,"bold","black"))
+      font.title = c(14,"bold"),
+      font.x = c(12,"bold"),
+      font.y = c(12,"bold"),
+      font.legend=c(12),
+      font.xtickslab=c(9,"black"),
+      font.ytickslab=c(9,"black"))
 
 ##################################
 # Testing the proportional hazards assumption
