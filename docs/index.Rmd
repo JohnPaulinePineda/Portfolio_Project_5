@@ -1332,15 +1332,15 @@ ggpar(SurvivalTimeInWeek.KaplanMeier.MultivariateCoxPH.PhEcogSex.PhEcogAdjustedB
 ##################################
 (DBP.Analysis.MultivariateCoxPH.PhEcogSex.PHAssumptionPlot <- ggcoxzph(DBP.Analysis.MultivariateCoxPH.PhEcogSex.PHAssumptionCheck,
          point.col = "red",
-         point.size = 3,
+         point.size = 2,
          point.shape = 19,
-         point.alpha = 0.80,
+         point.alpha = 0.50,
   ggtheme = theme_survminer(),
-  font.main = c(25,"bold"),
-  font.x = c(20,"bold"),
-  font.y = c(20,"bold"),
-  font.xtickslab=c(15,"bold","black"),
-  font.ytickslab=c(15,"bold","black")))
+  font.main = c(12,"bold"),
+  font.x = c(12,"bold"),
+  font.y = c(12,"bold"),
+  font.xtickslab=c(9,"black"),
+  font.ytickslab=c(9,"black")))
 
 ##################################
 # Formulating the graphical verification
@@ -1351,15 +1351,15 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
  type = "deviance",
  ox.scale = "observation.id",
  point.col = "red",
- point.size = 3,
+ point.size = 2,
  point.shape = 19,
- point.alpha = 0.80,
+ point.alpha = 0.50,
  ggtheme = theme_survminer(),
- font.main = c(25,"bold"),
- font.x = c(20,"bold"),
- font.y = c(20,"bold"),
- font.xtickslab=c(15,"bold","black"),
- font.ytickslab=c(15,"bold","black"),
+ font.main = c(12,"bold"),
+ font.x = c(12,"bold"),
+ font.y = c(12,"bold"),
+ font.xtickslab=c(9,"black"),
+ font.ytickslab=c(9,"black"),
  main = "Deviance Residuals by Observation")
 
 ##################################
@@ -1371,16 +1371,16 @@ ggcoxdiagnostics(DBP.Analysis.MultivariateCoxPH.PhEcogSex,
  type = "dfbeta",
  ox.scale = "observation.id",
  point.col = "red",
- point.size = 3,
+ point.size = 2,
  point.shape = 19,
- point.alpha = 0.80,
+ point.alpha = 0.50,
  ggtheme = theme_survminer(),
- font.main = c(25,"bold"),
- font.x = c(20,"bold"),
- font.y = c(20,"bold"),
- font.xtickslab=c(15,"bold","black"),
- font.ytickslab=c(15,"bold","black"),
- main = "Dfbeta Residuals by Observation")
+ font.main = c(12,"bold"),
+ font.x = c(12,"bold"),
+ font.y = c(12,"bold"),
+ font.xtickslab=c(9,"black"),
+ font.ytickslab=c(9,"black"),
+ main = "Deviance Residuals by Observation")
 
 ##################################
 # Formulating the graphical verification
