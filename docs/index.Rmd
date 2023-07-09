@@ -1,6 +1,5 @@
 ---
-title: "R : Survival Analysis and Descriptive Modelling for a Three-Group Right-Censored
-  Data with Time-Independent Variables Using Cox Proportional Hazards Model"
+title: "Supervised Learning : Survival Analysis and Descriptive Modelling for a Three-Group Right-Censored Data with Time-Independent Variables Using Cox Proportional Hazards Model"
 author: "John Pauline Pineda"
 date: "May 6, 2022"
 output: 
